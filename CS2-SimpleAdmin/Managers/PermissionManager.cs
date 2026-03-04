@@ -75,7 +75,14 @@ public class PermissionManager(IDatabaseProvider? databaseProvider)
 	    {
 		    await using var connection = await databaseProvider.CreateConnectionAsync();
 		    var sql = databaseProvider.GetAdminsQuery();
+            CS2_SimpleAdmin._logger?.LogInformation($"[GetAllPlayersFlags] ServerId={CS2_SimpleAdmin.ServerId}, Time={now}");
 		    var admins = (await connection.QueryAsync(sql, new { CurrentTime = now, serverid = CS2_SimpleAdmin.ServerId })).ToList();
+
+            CS2_SimpleAdmin._logger?.LogInformation($"[GetAllPlayersFlags] Raw rows from DB: {admins.Count}");
+            foreach (var row in admins)
+            {
+                CS2_SimpleAdmin._logger?.LogInformation($"  -> steamid={row.player_steamid} | type={row.player_steamid?.GetType().Name} | flag={row.flag} | old_flags={row.old_flags}");
+            }
 
 		    var groupedPlayers = admins
 			    .GroupBy(r => new { playerSteamId = r.player_steamid, playerName = r.player_name, r.immunity, r.ends })
@@ -100,7 +107,6 @@ public class PermissionManager(IDatabaseProvider? databaseProvider)
 
 				    string playerName = g.Key.playerName as string ?? string.Empty;
 
-				    // tutaj zakładamy, że Dapper zwraca już string (nie dynamic)
 				    var flags = g.Select(r => r.flag as string ?? string.Empty).ToList();
 
 				    if (g.First().old_flags is string oldFlags && !string.IsNullOrEmpty(oldFlags))
@@ -110,11 +116,13 @@ public class PermissionManager(IDatabaseProvider? databaseProvider)
 
 				    flags = flags.Where(f => !string.IsNullOrEmpty(f)).Distinct().ToList();
 
+                    CS2_SimpleAdmin._logger?.LogInformation($"  => Grouped: steamId={steamId} | name={playerName} | flags=[{string.Join(", ", flags)}]");
+
 				    return (steamId, playerName, flags, immunity, ends);
 			    })
 			    .ToList();
 
-            CS2_SimpleAdmin._logger?.LogInformation($"[GetAllPlayersFlags] SUCCESS. Raw Dapper rows: {admins.Count}. Grouped Admins: {groupedPlayers.Count}");
+            CS2_SimpleAdmin._logger?.LogInformation($"[GetAllPlayersFlags] SUCCESS. Grouped Admins: {groupedPlayers.Count}");
 		    return groupedPlayers;
 	    }
 	    catch (Exception ex)

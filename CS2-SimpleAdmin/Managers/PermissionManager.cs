@@ -336,17 +336,13 @@ public class PermissionManager(IDatabaseProvider? databaseProvider)
             .Where(player => SteamID.TryParse(player.identity.ToString(), out _))
             .ToList();
 
-		// foreach (var player in allPlayers)
-		// {
-		// 	var (steamId, name, flags, immunity, ends) = player;
-		//           
-		// 	Console.WriteLine($"Player SteamID: {steamId}");
-		// 	Console.WriteLine($"Player Name: {name}");
-		// 	Console.WriteLine($"Flags: {string.Join(", ", flags)}");
-		// 	Console.WriteLine($"Immunity: {immunity}");
-		// 	Console.WriteLine($"Ends: {(ends.HasValue ? ends.Value.ToString("yyyy-MM-dd HH:mm:ss") : "Never")}");
-		// 	Console.WriteLine();
-		// }
+		CS2_SimpleAdmin._logger?.LogInformation($"[CreateAdminsJsonFile] Fetched {allPlayers.Count} players from DB. Valid: {validPlayers.Count}.");
+
+		foreach (var player in validPlayers)
+		{
+			var (steamId, name, flags, immunity, ends) = player;
+		    CS2_SimpleAdmin._logger?.LogInformation($"[CreateAdminsJsonFile] - Admin: {name} | SteamID: {steamId} | Flags: {string.Join(", ", flags)}");
+		}
 
 		var jsonData = validPlayers
 			.GroupBy(player => player.name) // Group by player name

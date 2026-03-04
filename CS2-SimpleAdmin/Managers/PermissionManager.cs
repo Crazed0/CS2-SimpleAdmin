@@ -101,19 +101,25 @@ public class PermissionManager(IDatabaseProvider? databaseProvider)
 				    string playerName = g.Key.playerName as string ?? string.Empty;
 
 				    // tutaj zakładamy, że Dapper zwraca już string (nie dynamic)
-				    var flags = g.Select(r => r.flag as string ?? string.Empty)
-					    .Distinct()
-					    .ToList();
+				    var flags = g.Select(r => r.flag as string ?? string.Empty).ToList();
+
+				    if (g.First().old_flags is string oldFlags && !string.IsNullOrEmpty(oldFlags))
+				    {
+					    flags.AddRange(oldFlags.Split(',').Select(f => f.Trim()));
+				    }
+
+				    flags = flags.Where(f => !string.IsNullOrEmpty(f)).Distinct().ToList();
 
 				    return (steamId, playerName, flags, immunity, ends);
 			    })
 			    .ToList();
 
+            CS2_SimpleAdmin._logger?.LogInformation($"[GetAllPlayersFlags] SUCCESS. Raw Dapper rows: {admins.Count}. Grouped Admins: {groupedPlayers.Count}");
 		    return groupedPlayers;
 	    }
 	    catch (Exception ex)
 	    {
-		    CS2_SimpleAdmin._logger?.LogError("Unable to load admins from database! {exception}", ex.Message);
+		    CS2_SimpleAdmin._logger?.LogError($"[GetAllPlayersFlags] EXCEPTION: {ex.Message} \n {ex.StackTrace}");
 		    return [];
 	    }
     }

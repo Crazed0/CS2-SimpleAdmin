@@ -123,9 +123,9 @@ public class MySqlDatabaseProvider(string connectionString) : IDatabaseProvider
     public string GetAdminsQuery()
     {
         return """
-               SELECT sa_admins.player_steamid, sa_admins.player_name, sa_admins_flags.flag, sa_admins.immunity, sa_admins.ends
-               FROM sa_admins_flags
-               JOIN sa_admins ON sa_admins_flags.admin_id = sa_admins.id
+               SELECT sa_admins.player_steamid, sa_admins.player_name, sa_admins_flags.flag, sa_admins.flags AS old_flags, sa_admins.immunity, sa_admins.ends
+               FROM sa_admins
+               LEFT JOIN sa_admins_flags ON sa_admins_flags.admin_id = sa_admins.id
                WHERE (sa_admins.ends IS NULL OR sa_admins.ends > @CurrentTime)
                AND (sa_admins.server_id IS NULL OR sa_admins.server_id = @serverid)
                ORDER BY sa_admins.player_steamid

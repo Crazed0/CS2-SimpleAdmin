@@ -203,15 +203,36 @@ public partial class CS2_SimpleAdmin : BasePlugin, IPluginConfig<CS2_SimpleAdmin
         DatabaseProvider = new SqliteDatabaseProvider(ModuleDirectory + "/" + config.DatabaseConfig.SqliteFilePath);
     }
 
+    Logger.LogInformation($"[DB] Connecting to {config.DatabaseConfig.DatabaseHost}:{config.DatabaseConfig.DatabasePort} (db={config.DatabaseConfig.DatabaseName}, user={config.DatabaseConfig.DatabaseUser})...");
+
     var (success, exception) = Task.Run(() => DatabaseProvider.CheckConnectionAsync()).GetAwaiter().GetResult();
     if (!success)
     {
+        Logger.LogError("❌ [DB] Connection FAILED to {host}:{port} (db={db})",
+            config.DatabaseConfig.DatabaseHost,
+            config.DatabaseConfig.DatabasePort,
+            config.DatabaseConfig.DatabaseName);
+
         if (exception != null)
-            Logger.LogError("Problem with database connection! \n{exception}", exception);
+        {
+            if (exception.Contains("Connection refused", StringComparison.OrdinalIgnoreCase) ||
+                exception.Contains("ECONNREFUSED", StringComparison.OrdinalIgnoreCase))
+                Logger.LogError("❌ [DB] Connection Refused — check that MySQL is running and the host/port are correct.");
+            else if (exception.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+                Logger.LogError("❌ [DB] Access Denied — check your DatabaseUser and DatabasePassword.");
+            else if (exception.Contains("Unknown database", StringComparison.OrdinalIgnoreCase))
+                Logger.LogError("❌ [DB] Database '{db}' not found — check your DatabaseName.", config.DatabaseConfig.DatabaseName);
+            else
+                Logger.LogError("❌ [DB] Error: {exception}", exception);
+        }
 
         Unload(false);
         return;
     }
+
+    Logger.LogInformation("✅ [DB] Connected successfully to {host}:{port}",
+        config.DatabaseConfig.DatabaseHost,
+        config.DatabaseConfig.DatabasePort);
 
         Task.Run(() => DatabaseProvider.DatabaseMigrationAsync());
         

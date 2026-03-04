@@ -127,7 +127,7 @@ public class MySqlDatabaseProvider(string connectionString) : IDatabaseProvider
                FROM sa_admins
                LEFT JOIN sa_admins_flags ON sa_admins_flags.admin_id = sa_admins.id
                WHERE (sa_admins.ends IS NULL OR sa_admins.ends > @CurrentTime)
-               AND (sa_admins.server_id IS NULL OR sa_admins.server_id = @serverid)
+               AND (sa_admins.server_id IS NULL OR sa_admins.server_id = 0 OR sa_admins.server_id = @serverid)
                ORDER BY sa_admins.player_steamid
                """;
     }

@@ -394,77 +394,48 @@ public class PermissionManager(IDatabaseProvider? databaseProvider)
 							return acc;
 						});
 					
-					Server.NextWorldUpdate(() =>
-					{
-						var keysToRemove = new List<SteamID>();
 
-						foreach (var steamId in AdminCache.Keys.ToList()) 
-						{
-							var data = AdminManager.GetPlayerAdminData(steamId);
-							if (data != null)
-							{
-								var flagsArray = AdminCache[steamId].Flags.ToArray();
-								AdminManager.RemovePlayerPermissions(steamId, flagsArray);
-								AdminManager.RemovePlayerFromGroup(steamId, true, flagsArray);
-							}
-
-							keysToRemove.Add(steamId);
-						}
-
-						foreach (var steamId in keysToRemove)
-						{
-							if (!AdminCache.TryRemove(steamId, out _)) continue;
-
-							var data = AdminManager.GetPlayerAdminData(steamId);
-							if (data == null) continue;
-							if (data.Flags.Count != 0 && data.Groups.Count != 0) continue;
-
-							AdminManager.ClearPlayerPermissions(steamId);
-							AdminManager.RemovePlayerAdminData(steamId);
-						}
-
-						foreach (var player in group)
-						{
-							if (SteamID.TryParse(player.identity.ToString(), out var steamId) && steamId != null)
-							{
-								AdminCache.TryAdd(steamId, (player.ends, player.flags));
-							}
-						}
-					});
-
-					// Server.NextFrameAsync(() =>
-					// {
-					// 	for (var index = 0; index < AdminCache.Keys.ToList().Count; index++)
-					// 	{
-					// 		var steamId = AdminCache.Keys.ToList()[index];
-					// 		
-					// 		var data = AdminManager.GetPlayerAdminData(steamId);
-					// 		if (data != null)
-					// 		{
-					// 			AdminManager.RemovePlayerPermissions(steamId, AdminCache[steamId].Flags.ToArray());
-					// 			AdminManager.RemovePlayerFromGroup(steamId, true, AdminCache[steamId].Flags.ToArray());
-					// 		}
-					// 		
-					// 		if (!AdminCache.TryRemove(steamId, out _)) continue;
-					//
-					// 		if (data == null) continue;
-					// 		if (data.Flags.ToList().Count != 0 && data.Groups.ToList().Count != 0)
-					// 			continue;
-					// 		
-					// 		AdminManager.ClearPlayerPermissions(steamId);
-					// 		AdminManager.RemovePlayerAdminData(steamId);
-					// 	}
-					// 	
-					// 	foreach (var player in group)
-					// 	{
-					// 		SteamID.TryParse(player.identity, out var steamId);
-					// 		if (steamId == null) continue;
-					// 		AdminCache.TryAdd(steamId, (player.ends, player.flags));
-					// 	}
-					// });
 
 					return consolidatedData;
 				});
+
+		Server.NextWorldUpdate(() =>
+		{
+			var keysToRemove = new List<SteamID>();
+
+			foreach (var steamId in AdminCache.Keys.ToList()) 
+			{
+				var data = AdminManager.GetPlayerAdminData(steamId);
+				if (data != null)
+				{
+					var flagsArray = AdminCache[steamId].Flags.ToArray();
+					AdminManager.RemovePlayerPermissions(steamId, flagsArray);
+					AdminManager.RemovePlayerFromGroup(steamId, true, flagsArray);
+				}
+
+				keysToRemove.Add(steamId);
+			}
+
+			foreach (var steamId in keysToRemove)
+			{
+				if (!AdminCache.TryRemove(steamId, out _)) continue;
+
+				var data = AdminManager.GetPlayerAdminData(steamId);
+				if (data == null) continue;
+				if (data.Flags.Count != 0 && data.Groups.Count != 0) continue;
+
+				AdminManager.ClearPlayerPermissions(steamId);
+				AdminManager.RemovePlayerAdminData(steamId);
+			}
+
+			foreach (var player in validPlayers)
+			{
+				if (SteamID.TryParse(player.identity.ToString(), out var steamId) && steamId != null)
+				{
+					AdminCache.TryAdd(steamId, (player.ends, player.flags));
+				}
+			}
+		});
 		
 		var options = new JsonSerializerOptions
 		{
